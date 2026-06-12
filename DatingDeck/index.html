@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KV Date Vibe | Klang Valley Weekend Date Guide</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f9fafb; }</style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-xs">
+        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-rose-500 tracking-tight">KV Date Vibe ✨</h1>
+                <p class="text-xs text-gray-500">Curated PJ & KL Weekend Itineraries via Python</p>
+            </div>
+            <span class="bg-rose-50 text-rose-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-rose-100">
+                Live Data
+            </span>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-6 pb-24">
+        <div class="mb-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-1">What's the plan this weekend?</h2>
+            <p class="text-sm text-gray-500">Data streams directly from Python engine.</p>
+        </div>
+
+        <div class="flex gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar" id="filter-tabs">
+            <button onclick="filterVibe('all')" id="tab-all" class="vibe-tab active px-4 py-2 bg-rose-500 text-white text-xs font-medium rounded-full shadow-xs transition-all whitespace-nowrap cursor-pointer">All Spots</button>
+            <button onclick="filterVibe('market')" id="tab-market" class="vibe-tab px-4 py-2 bg-white text-gray-600 border border-gray-200 text-xs font-medium rounded-full transition-all whitespace-nowrap cursor-pointer">🛍️ Pop-Up Markets</button>
+            <button onclick="filterVibe('sports')" id="tab-sports" class="vibe-tab px-4 py-2 bg-white text-gray-600 border border-gray-200 text-xs font-medium rounded-full transition-all whitespace-nowrap cursor-pointer">🏸 Active Sports</button>
+            <button onclick="filterVibe('discount')" id="tab-discount" class="vibe-tab px-4 py-2 bg-white text-gray-600 border border-gray-200 text-xs font-medium rounded-full transition-all whitespace-nowrap cursor-pointer">🏷️ Mall Promos</button>
+        </div>
+
+        <div id="cards-container" class="space-y-6">
+            <p class="text-xs text-gray-400 text-center animate-pulse">Connecting to Python API...</p>
+        </div>
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 py-3 shadow-lg z-50">
+        <div class="max-w-md mx-auto px-6 flex justify-around items-center text-center">
+            <button class="flex flex-col items-center gap-1 text-rose-500">
+                <span class="text-lg">📍</span><span class="text-2xs font-medium">Discover</span>
+            </button>
+            <button onclick="alert('Submission engine initialized!')" class="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600">
+                <span class="text-lg">➕</span><span class="text-2xs font-medium">Submit Spot</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let cachedSpots = []; // Stores locally once fetched
+
+        // 1. Move functions to the global scope so buttons can find them immediately
+        function renderCards(spots) {
+            const container = document.getElementById("cards-container");
+            container.innerHTML = "";
+
+            if(spots.length === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No results found.</p>`;
+                return;
+            }
+
+            spots.forEach(spot => {
+                // Check if the label contains "Goody25" or "Google" to change the button text dynamically
+                const isArticle = spot.categoryLabel.includes("Goody25") || spot.categoryLabel.includes("Google");
+                const buttonText = isArticle ? "🔗 View Article" : "🗺️ Open Maps";
+
+                const cardHTML = `
+                    <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-xs">
+                        <div class="h-48 w-full bg-gray-200 relative">
+                            <img src="${spot.image}" class="w-full h-full object-cover">
+                            <span class="absolute top-3 left-3 text-2xs font-semibold px-2.5 py-1 rounded-full border ${spot.badgeColor}">
+                                ${spot.categoryLabel}
+                            </span>
+                        </div>
+                        <div class="p-4">
+                            <div class="text-2xs font-medium text-gray-400 uppercase mb-1">📍 ${spot.location}</div>
+                            <h3 class="text-base font-bold text-gray-900 mb-2">${spot.title}</h3>
+                            <p class="text-xs text-gray-600 mb-4">${spot.description}</p>
+                            <div class="bg-rose-50/50 rounded-xl p-3 border border-rose-100/50 mb-4">
+                                <p class="text-2xs font-semibold text-rose-600 uppercase mb-0.5">✨ Curation Spotlight:</p>
+                                <p class="text-xs text-gray-700 font-medium">${spot.highlight}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="${spot.mapsUrl}" target="_blank" class="flex-1 text-center bg-gray-900 text-white text-xs font-semibold py-2.5 rounded-xl transition-colors hover:bg-gray-800">
+                                    ${buttonText}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML("beforeend", cardHTML);
+            });
+        }
+
+        function filterVibe(category) {
+            document.querySelectorAll('.vibe-tab').forEach(tab => {
+                tab.classList.replace('bg-rose-500', 'bg-white');
+                tab.classList.replace('text-white', 'text-gray-600');
+            });
+            const activeTab = document.getElementById(`tab-${category}`);
+            activeTab.classList.replace('bg-white', 'bg-rose-500');
+            activeTab.classList.replace('text-gray-600', 'text-white');
+
+            if (category === 'all') {
+                renderCards(cachedSpots);
+            } else {
+                renderCards(cachedSpots.filter(s => s.category === category));
+            }
+        }
+
+        // 2. Network Fetch Request
+        async function fetchSpotsFromPython() {
+            try {
+                const response = await fetch('/api/spots');
+                cachedSpots = await response.json();
+                renderCards(cachedSpots);
+            } catch (error) {
+                document.getElementById("cards-container").innerHTML = `
+                    <div class="text-center py-12 bg-red-50 text-red-600 rounded-2xl border border-red-100">
+                        <p class="text-sm font-bold">Backend Connection Failed</p>
+                        <p class="text-xs mt-1">Make sure main.py is running via your terminal.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 3. Only run the fetch call once the page finishes loading
+        document.addEventListener("DOMContentLoaded", fetchSpotsFromPython);
+    </script>
+</body>
+</html>
